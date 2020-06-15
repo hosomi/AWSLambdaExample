@@ -1,0 +1,260 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Transform": "AWS::Serverless-2016-10-31",
+  "Description": "AWS Serverless API that exposes the add, remove and get operations for a music data using Amazon DynamoDB.",
+  "Parameters": {
+    "ShouldCreateTable": {
+      "Type": "String",
+      "AllowedValues": [
+        "true",
+        "false"
+      ],
+      "Description": "If true then the DynamoDB music table will be created with the CloudFormation stack."
+    },
+    "MusicTableName": {
+      "Type": "String",
+      "Description": "Name of DynamoDB table used to store the music post. If left blank a new table will be created.",
+      "MinLength": "0"
+    },
+    "ReadCapacity": {
+      "Type": "Number",
+      "Description": "Read capacity for the DynamoDB music table.",
+      "Default": "3",
+      "MinValue": 1
+    },
+    "WriteCapacity": {
+      "Type": "Number",
+      "Description": "Write capacity for the DynamoDB music table.",
+      "Default": "3",
+      "MinValue": 1
+    }
+  },
+  "Conditions": {
+    "CreateMusicTable": {
+      "Fn::Equals": [
+        {
+          "Ref": "ShouldCreateTable"
+        },
+        "true"
+      ]
+    },
+    "TableNameGenerated": {
+      "Fn::Equals": [
+        {
+          "Ref": "MusicTableName"
+        },
+        ""
+      ]
+    }
+  },
+  "Resources": {
+    "GetMusics": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "Handler": "AWSLambdaExample::AWSLambdaExample.Functions::GetMusicsAsync",
+        "Runtime": "dotnetcore3.1",
+        "CodeUri": "",
+        "Description": "Function to get a list of musics",
+        "MemorySize": 256,
+        "Timeout": 30,
+        "Role": null,
+        "Policies": [
+          "AWSLambdaFullAccess"
+        ],
+        "Environment": {
+          "Variables": {
+            "MusicTable": {
+              "Fn::If": [
+                "CreateMusicTable",
+                {
+                  "Ref": "MusicTable"
+                },
+                {
+                  "Ref": "MusicTableName"
+                }
+              ]
+            }
+          }
+        },
+        "Events": {
+          "PutResource": {
+            "Type": "Api",
+            "Properties": {
+              "Path": "/",
+              "Method": "GET"
+            }
+          }
+        }
+      }
+    },
+    "GetMusic": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "Handler": "AWSLambdaExample::AWSLambdaExample.Functions::GetMusicAsync",
+        "Runtime": "dotnetcore3.1",
+        "CodeUri": "",
+        "Description": "Function to get a single music",
+        "MemorySize": 256,
+        "Timeout": 30,
+        "Role": null,
+        "Policies": [
+          "AWSLambdaFullAccess"
+        ],
+        "Environment": {
+          "Variables": {
+            "MusicTable": {
+              "Fn::If": [
+                "CreateMusicTable",
+                {
+                  "Ref": "MusicTable"
+                },
+                {
+                  "Ref": "MusicTableName"
+                }
+              ]
+            }
+          }
+        },
+        "Events": {
+          "PutResource": {
+            "Type": "Api",
+            "Properties": {
+              "Path": "/{Id}",
+              "Method": "GET"
+            }
+          }
+        }
+      }
+    },
+    "AddMusic": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "Handler": "AWSLambdaExample::AWSLambdaExample.Functions::AddMusicAsync",
+        "Runtime": "dotnetcore3.1",
+        "CodeUri": "",
+        "Description": "Function to add a music",
+        "MemorySize": 256,
+        "Timeout": 30,
+        "Role": null,
+        "Policies": [
+          "AWSLambdaFullAccess"
+        ],
+        "Environment": {
+          "Variables": {
+            "MusicTable": {
+              "Fn::If": [
+                "CreateMusicTable",
+                {
+                  "Ref": "MusicTable"
+                },
+                {
+                  "Ref": "MusicTableName"
+                }
+              ]
+            }
+          }
+        },
+        "Events": {
+          "PutResource": {
+            "Type": "Api",
+            "Properties": {
+              "Path": "/",
+              "Method": "PUT"
+            }
+          }
+        }
+      }
+    },
+    "RemoveMusic": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "Handler": "AWSLambdaExample::AWSLambdaExample.Functions::RemoveMusicAsync",
+        "Runtime": "dotnetcore3.1",
+        "CodeUri": "",
+        "Description": "Function to remove a music",
+        "MemorySize": 256,
+        "Timeout": 30,
+        "Role": null,
+        "Policies": [
+          "AWSLambdaFullAccess"
+        ],
+        "Environment": {
+          "Variables": {
+            "MusicTable": {
+              "Fn::If": [
+                "CreateMusicTable",
+                {
+                  "Ref": "MusicTable"
+                },
+                {
+                  "Ref": "MusicTableName"
+                }
+              ]
+            }
+          }
+        },
+        "Events": {
+          "PutResource": {
+            "Type": "Api",
+            "Properties": {
+              "Path": "/",
+              "Method": "DELETE"
+            }
+          }
+        }
+      }
+    },
+    "MusicTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "Condition": "CreateMusicTable",
+      "Properties": {
+        "TableName": {
+          "Fn::If": [
+            "TableNameGenerated",
+            {
+              "Ref": "AWS::NoValue"
+            },
+            {
+              "Ref": "MusicTableName"
+            }
+          ]
+        },
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "Id",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "Id",
+            "KeyType": "HASH"
+          }
+        ],
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": {
+            "Ref": "ReadCapacity"
+          },
+          "WriteCapacityUnits": {
+            "Ref": "WriteCapacity"
+          }
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "MusicTable": {
+      "Value": {
+        "Fn::If": [
+          "CreateMusicTable",
+          {
+            "Ref": "MusicTable"
+          },
+          {
+            "Ref": "MusicTableName"
+          }
+        ]
+      }
+    }
+  }
+}
