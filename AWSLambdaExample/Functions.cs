@@ -164,13 +164,12 @@ namespace AWSLambdaExample
             context.Logger.LogLine($"Saving music Artist: {music.Artist}, SongTitle: {music.SongTitle}.");
             await DDBContext.SaveAsync<Music>(music);
 
-            var response = new APIGatewayProxyResponse
+            return new APIGatewayProxyResponse
             {
+                Headers = new Dictionary<string, string> { { "Content-Type", "application/json" } },
                 StatusCode = (int)HttpStatusCode.OK,
-                Body = $"Saving music Artist: {music.Artist}, SongTitle: {music.SongTitle}.",
-                Headers = new Dictionary<string, string> { { "Content-Type", "text/plain" } }
+                Body = JsonConvert.SerializeObject(music)
             };
-            return response;
         }
 
         /// <summary>

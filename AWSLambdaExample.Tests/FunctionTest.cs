@@ -47,7 +47,7 @@ namespace AWSLambdaExample.Tests
             Functions functions = new Functions(this.DDBClient, this.TableName);
 
 
-            // Add a new blog post
+            // Add a new music post
             Music myMusic = new Music
             {
                 Artist = "No One You Know",
@@ -65,6 +65,25 @@ namespace AWSLambdaExample.Tests
             context = new TestLambdaContext();
             response = await functions.AddMusicAsync(request, context);
             Assert.Equal(200, response.StatusCode);
+            Assert.NotNull(response?.Body);
+
+
+            var responseMyMusic = JsonConvert.DeserializeObject<Music>(response?.Body);
+
+            // Confirm we can get the music post back out
+            request = new APIGatewayProxyRequest
+            {
+                PathParameters = new Dictionary<string, string> {
+                    { Functions.ID_QUERY_STRING_NAME, responseMyMusic.Artist },
+                    { Functions.RANGE_QUERY_STRING_NAME, responseMyMusic.SongTitle }
+                }
+            };
+            context = new TestLambdaContext();
+            response = await functions.GetMusicAsync(request, context);
+            Assert.Equal(200, response.StatusCode);
+
+
+    
 
         }
 
